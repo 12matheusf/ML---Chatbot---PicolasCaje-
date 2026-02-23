@@ -1,33 +1,87 @@
-import pandas as pd
-import matplotlib.pyplot as plt
+import sys
+import platform
+import subprocess
+from importlib import metadata
 
-# 1. Criação do Dataset Fictício (Simulando o CSV)
-data = {
-    'id_transacao': [101, 102, 103, 104, 105, 106, 107, 108, 109, 110],
-    'valor': [150, 450, 200, 800, 350, 120, 950, 600, 280, 720],
-    'satisfacao': [5, 8, 6, 9, 7, 4, 10, 8, 6, 9]
-}
+# Cores para Terminal
+class Colors:
+    OK = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    BLUE = '\033[94m'
+    END = '\033[0m'
+    BOLD = '\033[1m'
 
-# Converte o dicionário em um DataFrame do Pandas
-df = pd.DataFrame(data)
+def get_lib_version(package_name):
+    """
+    Tenta obter a versão do pacote instalado via metadata (padrão Python 3.8+).
+    Substitui a necessidade de pkg_resources.
+    """
+    try:
+        return metadata.version(package_name)
+    except metadata.PackageNotFoundError:
+        return None
 
-# 2. Exploração de Dados
-print("--- Primeiras 5 linhas do Dataset ---")
-print(df.head())
+def run_health_check():
+    print(f"{Colors.BLUE}{'='*60}{Colors.END}")
+    print(f"{Colors.BOLD} AI/ML ENVIRONMENT DIAGNOSTIC - PRO VERSION{Colors.END}")
+    print(f"{Colors.BLUE}{'='*60}{Colors.END}")
 
-print("\n--- Estatísticas Descritivas ---")
-print(df.describe())
+    errors = 0
+    warnings = 0
 
-# 3. Visualização
-plt.figure(figsize=(10, 6))
-plt.scatter(df['valor'], df['satisfacao'], color='blue', edgecolors='black', alpha=0.7)
+    # 1. Runtime Check (Python & OS)
+    py_version = platform.python_version()
+    is_valid_py = sys.version_info.major == 3 and sys.version_info.minor >= 10
+    
+    status = f"{Colors.OK}OK{Colors.END}" if is_valid_py else f"{Colors.FAIL}REQUER 3.10+{Colors.END}"
+    print(f"🔹 Python {py_version} ({platform.system()}): {status}")
+    if not is_valid_py: errors += 1
 
-# Personalização do Gráfico
-plt.title('Análise de Satisfação do Cliente vs Investimento')
-plt.xlabel('Valor Gasto (R$)')
-plt.ylabel('Nível de Satisfação (1-10)')
-plt.grid(True, linestyle='--', alpha=0.6)
+    # 2. Virtual Environment Check
+    is_venv = sys.prefix != sys.base_prefix
+    status = f"{Colors.OK}Ativo{Colors.END}" if is_venv else f"{Colors.WARNING}NÃO DETECTADO (Global){Colors.END}"
+    print(f"🔹 Ambiente Virtual: {status}")
+    if not is_venv: warnings += 1
 
-# Exibição
-print("\n Gerando gráfico... Feche a janela da imagem para encerrar o script.")
-plt.show()
+    # 3. Stack de Data Science (Nome do Pacote no PyPI : Nome amigável)
+    libs = {
+        "numpy": "NumPy",
+        "pandas": "Pandas",
+        "matplotlib": "Matplotlib",
+        "scikit-learn": "Scikit-Learn",
+        "scipy": "SciPy"
+    }
+
+    print(f"\n{Colors.BOLD} Verificando Dependências Core:{Colors.END}")
+    for pkg, name in libs.items():
+        version = get_lib_version(pkg)
+        if version:
+            print(f"  {Colors.OK}✅ {name.ljust(15)} | v{version}{Colors.END}")
+        else:
+            print(f"  {Colors.FAIL}❌ {name.ljust(15)} | NÃO INSTALADO!{Colors.END}")
+            errors += 1
+
+    # 4. Verificação de Performance (NumPy/BLAS)
+    try:
+        import numpy as np
+        # Verifica se o numpy está usando bibliotecas de aceleração
+        config = np.show_config
+        print(f"\n{Colors.BOLD}⚙️  Otimização de Hardware:{Colors.END}")
+        print(f"  ⚡ NumPy SIMD: {np.core.umath.__cpu_features__ if hasattr(np.core, 'umath') else 'N/A'}")
+    except:
+        pass
+
+    # Relatório Final
+    print(f"\n{Colors.BLUE}{'='*60}{Colors.END}")
+    if errors == 0:
+        msg = "AMBIENTE VALIDADO COM SUCESSO!" if warnings == 0 else "AMBIENTE PRONTO (VERIFICAR AVISOS)"
+        color = Colors.OK if warnings == 0 else Colors.WARNING
+        print(f"{Colors.BOLD}{color}✨ RESULTADO: {msg}{Colors.END}")
+    else:
+        print(f"{Colors.BOLD}{Colors.FAIL} RESULTADO: {errors} ERRO(S) CRÍTICO(S) ENCONTRADO(S){Colors.END}")
+        print(f"Sugestão: pip install {' '.join(libs.keys())}")
+    print(f"{Colors.BLUE}{'='*60}{Colors.END}")
+
+if __name__ == "__main__":
+    run_health_check()
