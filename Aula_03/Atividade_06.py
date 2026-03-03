@@ -13,11 +13,22 @@ df = pd.DataFrame(data)
 # --- DESAFIO DE REGRESSÃO MÚLTIPLA ---
 # O objetivo é prever o 'custo_ads_real' usando 'tempo_conversa_min' E 'mensagens_trocadas'.
 
-# DICA 3: X agora terá DUAS colunas. Ex: X = df[['coluna1', 'coluna2']]
-# DICA 4: O treinamento segue o mesmo padrão .fit(X_train, y_train)
-
 # --- ESPAÇO PARA O ALUNO DESENVOLVER ---
+
 # 1. Defina X e y
+# X contém as colunas preditoras (tempo e mensagens)
+X = df[['tempo_conversa_min', 'mensagens_trocadas']]
+# y é o que queremos prever (custo)
+y = df['custo_ads_real']
+
 # 2. Crie o modelo LinearRegression()
+modelo = LinearRegression()
+
 # 3. Treine o modelo
+modelo.fit(X, y)
+
 # 4. Use .predict([[15, 35]]) para prever o custo de uma conversa de 15min com 35 mensagens.
+entrada = pd.DataFrame([[15, 35]], columns=['tempo_conversa_min', 'mensagens_trocadas'])
+predicao = modelo.predict(entrada)
+
+print(f"Previsão de custo para 15min e 35 mensagens: R$ {predicao[0]:.2f}")
